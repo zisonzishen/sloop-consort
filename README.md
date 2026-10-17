@@ -44,6 +44,7 @@ android/     WebView shell, local server, USB MIDI bridge, file bridge
 
 ## Credits and licences
 
-- SLOOP and the FM-1 belong to their respective authors. This is an independent companion and contains no firmware.
+- **SLOOP** is by 3dSam, built on **[Felucca](https://github.com/hugelton/Felucca)** by Leo Kuroshita (@kurogedelic) / **Hügelton Instruments**. This is an independent companion: it contains no firmware and is not affiliated with them.
+- The M-VAVE FM-1 belongs to its owners.
 - The code is GPL-3.0-only (see `LICENSE`), matching the SLOOP editor sources it was developed against.
 - The Terminus font is SIL OFL 1.1; see `LICENSES/Terminus-OFL.txt`.
