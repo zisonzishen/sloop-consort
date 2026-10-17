@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Consort · FM-1 companion</title>
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<header>
+  <a class="brand" href="#" aria-label="Consort">
+    <svg class="mark" viewBox="0 0 96 56" aria-hidden="true">
+      <path d="M6 44 A16 16 0 1 1 38 44" fill="none" stroke="#F2F2F2" stroke-width="5" stroke-linecap="round"/>
+      <rect x="20" y="9" width="4" height="31" fill="#F2F2F2"/>
+      <polygon points="25,12 32,19 25,19" fill="#287CFF"/>
+      <polygon points="25,21 36,28 25,28" fill="#1ECC70"/>
+      <polygon points="25,30 40,37 25,37" fill="#FFC618"/>
+      <polygon points="25,39 44,46 25,46" fill="#FF621A"/>
+      <polygon points="10,47 50,47 44,53 16,53" fill="#F2F2F2"/>
+      <polygon points="58,48 88,48 83,53 63,53" fill="#F2F2F2"/>
+      <rect x="70" y="29" width="3" height="19" fill="#F2F2F2"/>
+      <polygon points="74,32 84,45 74,45" fill="#F2F2F2"/>
+      <line x1="2" y1="54" x2="94" y2="54" stroke="#F2F2F2" stroke-width="1" opacity=".35"/>
+    </svg>
+    <span class="lockup">
+      <span class="word">consort</span>
+      <small id="skinName">FM-1 companion</small>
+    </span>
+  </a>
+  <button class="conn off"><i></i>Not connected</button>
+</header>
+
+<main>
+  <!-- 采样 -->
+  <section class="page on" id="p-samples">
+    <div class="title"><h1 data-i18n="smp.title">Sampler</h1><span data-i18n="smp.sub">Record · trim · loop · USR1–4</span></div>
+
+    <div class="chips" id="smp-slots"></div>
+    <div class="row" style="margin:-4px 0 10px;gap:8px">
+      <button class="mini" id="smp-erase" data-i18n="smp.erase">Erase slot</button>
+      <span class="hint" id="smp-slotinfo">—</span>
+    </div>
+
+    <div class="card">
+      <div class="wave" id="smp-wave">
+        <svg id="smp-wavesvg" viewBox="0 0 400 132" preserveAspectRatio="none"></svg>
+        <div class="sel" id="smp-sel" hidden><i class="tl"></i><i class="tr"></i></div>
+        <div class="loopreg" id="smp-loopreg" hidden></div>
+        <div class="hint" id="smp-wavehint">Press REC to record</div>
+      </div>
+      <div class="recrow">
+        <button class="rec" id="smp-rec">REC</button>
+        <div class="grow">
+          <div class="row" style="justify-content:space-between">
+            <span class="time" id="smp-time">00:00.0</span><span class="hint" id="smp-cap">/ 7.0 s</span>
+          </div>
+          <div class="meter" style="margin-top:5px"><i id="smp-meter"></i></div>
+        </div>
+      </div>
+      <div class="acts">
+        <button id="smp-play" data-i18n="smp.audition">Audition</button>
+        <button id="smp-trim" data-i18n="smp.trim">Auto-trim</button>
+        <button id="smp-norm" data-i18n="smp.norm">Normalize</button>
+        <button id="smp-fade" data-i18n="smp.fade">Fade</button>
+      </div>
+      <div class="params">
+        <div class="param"><span>ROOT</span>
+          <button class="mini" id="root-dec">−</button><b id="smp-root">C4</b><button class="mini" id="root-inc">+</button>
+        </div>
+        <div class="param"><span>LOOP</span><button class="mini" id="smp-loopmode">ONE SHOT</button></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="smp-name" class="name" placeholder="NAME" maxlength="8" spellcheck="false">
+        <button class="pri" id="smp-upload">Send to USR1</button>
+      </div>
+      <p class="hint" id="smp-hint" data-i18n="smp.hint">Records through the phone mic, 7 s max; uploads as 22050 Hz mono ADPCM.</p>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="smp.recent">Recent takes</h2>
+      <div id="smp-takes"></div>
+      <p class="hint" id="smp-takes-empty" data-i18n="smp.none">No takes yet.</p>
+    </div>
+  </section>
+
+  <!-- FX -->
+  <section class="page" id="p-fx">
+    <div class="title"><h1>FX</h1><span data-i18n="fx.sub">All effects · one page · hold to engage</span></div>
+
+    <div class="card fxmaster">
+      <div class="fxslider"><label>FILTER <output>0</output></label><input id="fx-filter" type="range" min="-64" max="63" value="0"></div>
+      <div class="fxslider"><label>DUST <output>0</output></label><input id="fx-dust" type="range" min="0" max="127" value="0"></div>
+      <div class="fxslider"><label>DUCK <output>0</output></label><input id="fx-duck" type="range" min="0" max="127" value="0"></div>
+    </div>
+
+    <div class="fxgroup"><h2 data-i18n="fx.time">Time · fills</h2>
+      <div class="fxgrid">
+        <button class="fx" data-fx="0">LOOP 4</button><button class="fx" data-fx="1">LOOP 8</button>
+        <button class="fx" data-fx="2">LOOP 16</button><button class="fx" data-fx="3">LOOP 32</button>
+        <button class="fx" data-fx="4">STUTTER</button><button class="fx" data-fx="5">REVERSE</button>
+        <button class="fx" data-fx="6">STOP</button><button class="fx" data-fx="7">HALF</button>
+        <button class="fx" data-fx="19">REWIND</button><button class="fx" data-fx="23">FREEZE</button>
+      </div>
+    </div>
+
+    <div class="fxgroup"><h2 data-i18n="fx.filter">Filter</h2>
+      <div class="fxgrid">
+        <button class="fx" data-fx="8">LOW</button><button class="fx" data-fx="9">HIGH</button>
+        <button class="fx" data-fx="16">KILL LOW</button><button class="fx" data-fx="17">KILL MID</button>
+        <button class="fx" data-fx="18">KILL HIGH</button><button class="fx" data-fx="10">PHONE</button>
+      </div>
+    </div>
+
+    <div class="fxgroup"><h2 data-i18n="fx.tone">Tone</h2>
+      <div class="fxgrid">
+        <button class="fx" data-fx="11">CRUSH</button><button class="fx" data-fx="12">ALIAS</button>
+        <button class="fx" data-fx="20">OCT UP</button><button class="fx" data-fx="21">FLANGER</button>
+        <button class="fx" data-fx="14">ECHO</button>
+      </div>
+    </div>
+
+    <div class="fxgroup"><h2 data-i18n="fx.motion">Motion</h2>
+      <div class="fxgrid">
+        <button class="fx" data-fx="13">GATE</button><button class="fx" data-fx="15">WOBBLE</button>
+        <button class="fx" data-fx="22">AUTO-PAN</button><button class="fx" data-fx="25">MONO</button>
+        <button class="fx" data-fx="26">FADE OUT</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 歌曲 -->
+  <section class="page" id="p-songs">
+    <div class="title"><h1 data-i18n="songs.title">Songs</h1><span data-i18n="songs.sub">Sections · import/export · backup</span></div>
+
+    <div class="card">
+      <h2 data-i18n="songs.device">On the machine</h2>
+      <div class="row" style="justify-content:space-between">
+        <span class="status" id="song-status">—</span>
+        <span class="pill off" id="song-pill">Not connected</span>
+      </div>
+      <p class="hint" data-i18n="songs.hint">Sections are still edited on the SONG screen; a backup carries songs, sections, settings and presets (sample slots later).</p>
+      <div class="row" style="margin-top:12px">
+        <button class="grow pri" id="bk-save" data-i18n="songs.backup">Back up to phone</button>
+        <button class="grow" id="bk-restore" data-i18n="songs.restore">Restore from backup</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="songs.phone">On this phone</h2>
+      <div id="songs-list"></div>
+      <p class="hint" id="songs-empty" data-i18n="songs.none">No song files yet.</p>
+      <p class="hint" data-i18n="songs.hint2">Tap a row to share it to another app. ⋯: rename / delete (asks first).</p>
+      <button class="wide" style="margin-top:10px" id="song-import" data-i18n="songs.import">Import a .sloopsong file</button>
+    </div>
+  </section>
+
+  <!-- 设置 -->
+  <section class="page" id="p-settings">
+    <div class="title"><h1 data-i18n="set.title">Settings</h1><span data-i18n="set.sub">Skin · language · about</span></div>
+
+    <div class="card">
+      <h2 data-i18n="set.skin">Skin</h2>
+      <div class="row" style="margin:0 0 12px;gap:18px">
+        <label class="tog"><input type="checkbox" checked data-opt="dev"> <span data-i18n="set.writeDev">Write to SLOOP</span></label>
+        <label class="tog"><input type="checkbox" checked data-opt="app"> <span data-i18n="set.skinApp">Skin this app</span></label>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <div><b id="cur-name" style="font-size:16px">—</b><div class="hint" id="cur-when" style="margin-top:2px">Not read from the machine yet</div></div>
+        <span class="pill off" id="theme-pill">Not connected</span>
+      </div>
+      <div class="swatches" id="cur-sw"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="grow pri" id="th-read" data-i18n="set.read">Read from machine</button>
+        <button class="grow" id="th-save" data-i18n="set.save">Save to phone</button>
+      </div>
+      <p class="hint" data-i18n="set.skinHint">Only reads the machine's theme; colours are edited on the FM-1 or in the web editor.</p>
+
+      <h2 style="margin-top:14px" data-i18n="set.phoneSkins">On this phone</h2>
+      <div id="phone-themes"></div>
+      <p class="hint" id="phone-empty" data-i18n="set.phoneEmpty">No themes on the phone yet: read one from the machine and save it, or paste a share code.</p>
+      <p class="hint" data-i18n="set.skinHint2">Applying follows the checkboxes above: write back to SLOOP and skin this app. ⋯: share the theme code / delete (asks first).</p>
+      <button class="wide" style="margin-top:10px" id="th-import" data-i18n="set.import">Import a theme code</button>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="set.lang">Language</h2>
+      <div class="row">
+        <select id="lang-select" class="langsel">
+          <option value="en">English</option>
+          <option value="zh">简体中文</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="ru">Русский</option>
+        </select>
+      </div>
+      <p class="hint" data-i18n="set.langHint">Changes the whole interface at once.</p>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="set.about">About</h2>
+      <div class="about">
+        <b>Consort</b>
+        <span data-i18n="set.about1">The phone companion for the M-VAVE FM-1 running SLOOP 2.7.</span>
+        <span data-i18n="set.about2">Record samples, punch FX, manage songs and skins.</span>
+        <span data-i18n="set.about3">The screen and keys still belong to the machine; the phone does what is awkward there.</span>
+        <span class="mono">v0.9.0 · protocol SLOOP 2.7 · SysEx 7D 46 4C</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button class="on" data-page="p-samples">
+    <svg viewBox="0 0 24 24"><path d="M12 3v10"/><path d="M8.5 6.5v3"/><path d="M15.5 6.5v3"/><rect x="5" y="14" width="14" height="6" rx="2"/></svg>
+    <span data-i18n="nav.samples">SMP</span>
+  </button>
+  <button data-page="p-fx">
+    <svg viewBox="0 0 24 24"><path d="M4 8h16"/><circle cx="9" cy="8" r="2.2"/><path d="M4 16h16"/><circle cx="15" cy="16" r="2.2"/></svg>
+    FX
+  </button>
+  <button data-page="p-songs">
+    <svg viewBox="0 0 24 24"><path d="M4 5h10l2 2h4v12H4z"/><path d="M8 12h8"/></svg>
+    <span data-i18n="nav.songs">SONGS</span>
+  </button>
+  <button data-page="p-settings">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1"/></svg>
+    <span data-i18n="nav.settings">SET</span>
+  </button>
+</nav>
+
+<script>
+  const pages = [...document.querySelectorAll('.page')];
+  const navs = [...document.querySelectorAll('nav button')];
+  navs.forEach(b => b.addEventListener('click', () => {
+    navs.forEach(x => x.classList.toggle('on', x === b));
+    pages.forEach(p => p.classList.toggle('on', p.id === b.dataset.page));
+  }));
+  document.querySelectorAll('input[type=range]').forEach(r => {
+    const out = r.parentElement.querySelector('output');
+    const paint = () => { if (out) out.textContent = r.value; };
+    r.addEventListener('input', paint); paint();
+  });
+</script>
+<div class="toast" id="toast"></div>
+<script src="i18n.js"></script>
+<script src="protocol.js"></script>
+<script src="app.js"></script>
+<script src="samples.js"></script>
+</body>
+</html>

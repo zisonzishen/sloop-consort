@@ -1,0 +1,14 @@
+# build output
+android/build/
+android/consort.apk
+android/consort.apk.idsig
+consort.apk
+
+# test artifacts
+.playwright-mcp/
+shot-*.png
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
