@@ -12,11 +12,22 @@
   let connRaw = null;                 // the USB MIDI port name, if it is printable ASCII
   let currentAt = 0;                  // when the machine's theme was read
   const T = (key, vars) => (window.ConsortI18n ? ConsortI18n.t(key, vars) : key);
-  // USB descriptors are not guaranteed to be valid UTF-8; a broken name arrives as U+FFFD or mojibake.
-  // Only a short printable-ASCII name is shown, and only then does the toast name the port.
+  // USB strings arrive as Unicode; the FM-1's port is "Hügelton Instruments Felucca". The header used to
+  // render it in Terminus, which has no ü and showed a placeholder, so the button now uses the system
+  // monospace face and ellipsizes a long name. A descriptor that stores the ü as a literal '?' has lost
+  // the byte; the known spelling is restored, and Latin-1-misread UTF-8 is repaired generically.
   function cleanPortName(name) {
-    const s = String(name || "").trim();
-    return /^[\x20-\x7E]{1,24}$/.test(s) ? s : "";
+    let s = String(name || "").replace(/[\u0000-\u001F\u007F]/g, "").trim();
+    if (!s) return "";
+    if (/[ÃÂ]/.test(s)) {
+      try {
+        const bytes = Uint8Array.from([...s].map((ch) => ch.charCodeAt(0) & 0xFF));
+        const fixed = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+        if (fixed.indexOf("�") < 0) s = fixed;
+      } catch (e) { /* not UTF-8 misread as Latin-1 */ }
+    }
+    s = s.replace(/^H\?gelton/i, "Hügelton");
+    return s.indexOf("�") < 0 ? s.slice(0, 48) : "";
   }
 
   function toastMsg(msg) {
@@ -85,7 +96,9 @@
   function setConn(on, label) {
     const el = document.querySelector(".conn");
     if (!el) return;
-    el.innerHTML = "<i></i>" + (on ? (label || T("conn.on")) : T("conn.off"));
+    el.innerHTML = "<i></i><span></span>";
+    const text = el.querySelector("span");
+    if (text) text.textContent = on ? (label || T("conn.on")) : T("conn.off");
     el.classList.toggle("off", !on);
     paintPills();
   }
@@ -182,20 +195,46 @@
   function brightest(list) {
     return list.slice().sort((a, b) => lum(b) - lum(a))[0] || "#e8e8e8";
   }
+  // WCAG contrast ratio. The FM-1 themes were made for a tiny OLED, not for this app's 10–20 px text:
+  // NORD's lightest UI colour is #6f6f6f on black (4.4:1), and its 50 % mix is unreadable. So the skin
+  // derives its text colours from the theme but lifts them toward white/black until they pass.
+  function contrast(a, b) {
+    const la = lum(a), lb = lum(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  }
+  function towardContrast(base, bg, min, target) {
+    let out = base;
+    for (let t = 0; t <= 1.0001; t += 0.05) {
+      out = mix(base, target, t);
+      if (contrast(out, bg) >= min) return out;
+    }
+    return target;
+  }
   function applySkin(t) {
     const root = document.documentElement;
     const bg = t.bg || "#0b0b0b";
-    const fg = brightest(t.c);
+    const target = contrast("#ffffff", bg) >= contrast("#000000", bg) ? "#ffffff" : "#000000";
+    const base = brightest([(t.c && t.c[0]) || t.hi || "#ffffff", t.hi || "#ffffff"]);
+    const fg = towardContrast(base, bg, 7, target);                 // body/button text
+    const fg2 = towardContrast(mix(bg, fg, 0.72), bg, 5.5, fg);    // body copy
+    const dim = towardContrast(mix(bg, fg, 0.45), bg, 4.5, fg);    // hints and labels
+    let acc = t.hi || "#ffffff";
+    if (contrast(acc, bg) < 4.5) {
+      const options = [...(t.trk || []), ...(t.c || []), target];
+      acc = options.slice().sort((a, b) => contrast(b, bg) - contrast(a, bg))[0];
+      acc = towardContrast(acc, bg, 4.5, target);
+    }
+    const ink = contrast("#000000", acc) >= contrast("#ffffff", acc) ? "#000000" : "#ffffff";
+    const trk = (t.trk || []).map((c) => (contrast(c, bg) >= 4 ? c : towardContrast(c, bg, 4, fg)));
     const v = {
-      "--bg": bg, "--fg": fg, "--fg2": mix(bg, fg, 0.78),
+      "--bg": bg, "--fg": fg, "--fg2": fg2,
       "--s1": mix(bg, fg, 0.06), "--s2": mix(bg, fg, 0.12), "--s3": mix(bg, fg, 0.24),
       "--card": mix(bg, fg, 0.06), "--card2": mix(bg, fg, 0.12),
       "--btn": mix(bg, fg, 0.12), "--line": mix(bg, fg, 0.16),
-      "--dim": mix(bg, fg, 0.50), "--nav": mix(bg, fg, 0.04),
+      "--dim": dim, "--nav": mix(bg, fg, 0.04),
       "--wave": mix(bg, fg, 0.05),
-      "--acc": t.hi || "#ffffff",
-      "--ink": lum(t.hi || "#ffffff") > 0.45 ? "#0b0b0b" : "#ffffff",
-      "--t1": t.trk[0], "--t2": t.trk[1], "--t3": t.trk[2], "--t4": t.trk[3]
+      "--acc": acc, "--ink": ink,
+      "--t1": trk[0] || fg, "--t2": trk[1] || fg, "--t3": trk[2] || fg, "--t4": trk[3] || fg
     };
     for (const k in v) if (v[k]) root.style.setProperty(k, v[k]);
     const name = document.getElementById("skinName");
@@ -620,6 +659,12 @@
   document.getElementById("th-save").addEventListener("click", saveCurrent);
   document.getElementById("th-import").addEventListener("click", importCode);
   renderPhoneThemes();
+  try {
+    if (window.ConsortFiles && ConsortFiles.version) {
+      const v = ConsortFiles.version();
+      if (v) document.getElementById("app-version").textContent = "v" + v;
+    }
+  } catch (e) { /* the browser preview has no package version */ }
   if (current) renderCurrent(current);
   else {
     const w = document.getElementById("cur-when");

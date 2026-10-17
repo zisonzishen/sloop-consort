@@ -22,7 +22,9 @@ header{display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1
 .lockup .word{font-size:20px;line-height:22px;color:var(--fg);letter-spacing:.02em}
 .lockup small{color:var(--dim);font-size:10px;line-height:13px;margin-top:4px;letter-spacing:.04em}
 .conn{margin-left:auto;display:flex;align-items:center;gap:7px;background:var(--s2);color:var(--fg2);
-      border:0;border-radius:0;padding:8px 12px;font:inherit;font-size:12px;min-height:38px;text-transform:none}
+      border:0;border-radius:0;padding:8px 12px;font-size:12px;min-height:38px;text-transform:none;max-width:58%;min-width:0;
+      font-family:ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace}
+.conn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .conn i{width:7px;height:7px;background:var(--t2);box-shadow:0 0 6px var(--t2)}
 .conn.off i{background:var(--s3);box-shadow:none}
 

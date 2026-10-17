@@ -84,6 +84,16 @@ public final class FilesBridge {
         });
     }
 
+    /** The build stamp from the manifest, so About can say which APK is installed. */
+    @JavascriptInterface
+    public String version() {
+        try {
+            return activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0).versionName;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     @JavascriptInterface
     public boolean rename(String name, String to) {
         String clean = to == null ? "" : to.trim().replaceAll("[\\\\/:*?\"<>|\\r\\n\\t]", "_");
