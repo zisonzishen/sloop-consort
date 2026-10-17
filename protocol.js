@@ -213,10 +213,16 @@
     if (L.rc) throw new Error("list rc " + L.rc);
     const it = L.items.find((x) => x.id === id);
     if (!it) return null;
-    const g = parseGet(await link.request(CMD.BK_GET,
-      [id, ...u35enc(0), it.len & 0x7F, (it.len >> 7) & 0x7F], { timeout: 1500, retries: 2 }));
-    if (g.rc) throw new Error("get rc " + g.rc);
-    return g.data;
+    // BK_GET takes at most 256 bytes per reply; a sample slot can be 80 KiB (a theme is 40 bytes).
+    const data = new Uint8Array(it.len);
+    for (let off = 0; off < it.len; off += 256) {
+      const n = Math.min(256, it.len - off);
+      const g = parseGet(await link.request(CMD.BK_GET,
+        [id, ...u35enc(off), n & 0x7F, (n >> 7) & 0x7F], { timeout: 1500, retries: 2 }));
+      if (g.rc) throw new Error("get rc " + g.rc);
+      data.set(g.data, off);
+    }
+    return data;
   }
   async function writeObject(link, id, bytes) {
     bytes = Uint8Array.from(bytes);

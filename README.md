@@ -60,7 +60,7 @@ android/     WebView shell, local server, USB MIDI bridge, file bridge
 
 ## Status
 
-The APK builds; the USB MIDI handshake and section status work on a real FM-1 (see the screenshots). The phone-side library, skins, languages and sampler editing are tested; the remaining machine writes (sample upload, FX, theme write-back, backup restore) are being exercised on hardware. Bug reports are welcome.
+The APK builds; the USB MIDI handshake and section status work on a real FM-1 (see the screenshots). The protocol layer — INFO, sample upload with the app's IMA encoder and stored-object CRC, theme write/read, backup capture and restore, LIVE FX and global SET — passes against the SLOOP virtual firmware in a host build. The Android-side writes are being exercised on hardware. Bug reports are welcome.
 
 ## Credits and licences
 
