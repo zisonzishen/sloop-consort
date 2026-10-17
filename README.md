@@ -1,17 +1,33 @@
 # Consort
 
-A phone companion for the **M-VAVE FM-1** running **SLOOP 2.7**. It does not try to reproduce the machine's controls; it covers the things that are awkward on a phone.
+**A phone companion for the M-VAVE FM-1 running SLOOP 2.7.** It is deliberately narrow: it does the jobs that are awkward on the machine, and leaves the instrument itself alone.
 
-Status: work in progress. The APK builds, the USB MIDI handshake works on a real FM-1, and the phone-side features (library, files, skins, languages) are tested. The sampler, FX, theme and backup writes are still being verified on hardware.
+| Sampler | FX |
+| --- | --- |
+| <img src="docs/screenshots/sampler.jpg" width="330" alt="The sampler page"> | <img src="docs/screenshots/fx.jpg" width="330" alt="The FX page"> |
+| **Songs and project files** | **Settings, skins and languages** |
+| <img src="docs/screenshots/songs.jpg" width="330" alt="The songs page"> | <img src="docs/screenshots/settings.jpg" width="330" alt="The settings page"> |
 
-## What it does
+*Screenshots: the app wearing an FM-1 theme (ABLETON).*
 
-- **Sampler** — record up to 7 s through the phone mic, trim (auto or by dragging the ends), normalize, fade, set the root note and loop mode, name it, and send it to one of the four USR slots. Takes stay on the phone as WAV in `Download/SLOOP`.
-- **FX** — every effect on one dense page, grouped by kind, with the master FILTER / DUST / DUCK sliders. Hold a pad to engage it, release to let go.
-- **Songs** — song/section status, a full backup (also written to `Download/SLOOP` as a JSON file) and restore from the in-app list or a backup file, and a phone-side library: import a `.sloopsong`, rename it, share it to another app, delete it.
-- **Settings** — read the current theme from the FM-1, save it on the phone, write it back, and wear the same colours in the app; eight interface languages (English by default); about.
+## Scope: only what SLOOP makes awkward
 
-The FM-1 is reached over USB MIDI through Android's own `android.media.midi`, not Web MIDI. No firmware is modified. Phones need USB host / OTG; the FM-1's USB port must be the one that exposes MIDI.
+The FM-1 remains the instrument. Consort is the extra pair of hands:
+
+1. **An external sampler and sample management.** Record through the phone mic (up to 7 s), trim, normalize, fade, set the root note and loop, name it, and send it to USR1–4. Takes stay on the phone as WAV files; the slots can be inspected and erased from the same page.
+2. **Punch-in FX without key combos.** All 27 effects are on one dense page, grouped by time, filter, tone and motion. Hold a pad to engage it, release to let go; the master FILTER / DUST / DUCK sliders sit above.
+3. **Project files.** The FM-1 keeps one project; Consort backs the whole thing up to the phone (and to a JSON file in `Download/SLOOP`), restores it, and manages a phone-side library of `.sloopsong` files: import, rename, share, delete.
+4. **Theme sync.** Read the current theme from the machine, save it on the phone, write it back, and wear the same colours as the app's own skin. Themes can also travel as share codes.
+
+Everything else stays where it belongs: sequencing, sections and patterns on the SONG screen, sound design on the FM-1 or in the web editor. This is not a replacement editor.
+
+## A little more detail
+
+- **Sampler** — IMA ADPCM at 22050 Hz mono, written over the same USB MIDI link SLOOP uses; a hard 7-second cap keeps it inside the 80 KiB slot. Audition follows the trim, and loops in LOOP mode.
+- **FX** — LIVE op 3, held and released, so an effect can never stick. The names are the machine's own.
+- **Songs** — PROJECT for the section status; backup objects for the full state. A backup is written both to the app and to a JSON file, so clearing the WebView's storage does not lose it. Restore from the last five backups or from a file.
+- **Skins and settings** — the theme is object 11 on the FM-1 (THM2); the app derives its palette from it with contrast lifting so text stays readable. Eight interface languages, English by default.
+- No firmware is modified. The FM-1 is reached through Android's USB MIDI (`android.media.midi`), not Web MIDI. Phones need USB host / OTG; the FM-1's USB port must be the one that exposes MIDI.
 
 ## Build
 
@@ -19,7 +35,7 @@ Needs the Android SDK (build-tools and a platform), JDK 17, and a shell where `a
 
     bash android/build.sh
 
-The signed APK is written to `consort.apk` at the project root (and `android/consort.apk`).
+The signed APK is written to `consort.apk` at the project root (and `android/consort.apk`). `About` shows the package version; the build script stamps the time into it, so a sideloaded test build can be identified.
 
 ## Preview without hardware
 
@@ -37,10 +53,14 @@ index.html   the four pages and the banner
 theme.css    SLOOP's visual language (Terminus, square controls)
 i18n.js      the eight interface languages
 protocol.js  framing, Link, backup objects, themes, SMP
-app.js       theme/skin, FX, songs, settings
+app.js       skin, FX, songs, settings
 samples.js   the sampler
 android/     WebView shell, local server, USB MIDI bridge, file bridge
 ```
+
+## Status
+
+The APK builds; the USB MIDI handshake and section status work on a real FM-1 (see the screenshots). The phone-side library, skins, languages and sampler editing are tested; the remaining machine writes (sample upload, FX, theme write-back, backup restore) are being exercised on hardware. Bug reports are welcome.
 
 ## Credits and licences
 
