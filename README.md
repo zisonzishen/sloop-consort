@@ -8,7 +8,7 @@ Status: work in progress. The APK builds, the USB MIDI handshake works on a real
 
 - **Sampler** — record up to 7 s through the phone mic, trim (auto or by dragging the ends), normalize, fade, set the root note and loop mode, name it, and send it to one of the four USR slots. Takes stay on the phone as WAV in `Download/SLOOP`.
 - **FX** — every effect on one dense page, grouped by kind, with the master FILTER / DUST / DUCK sliders. Hold a pad to engage it, release to let go.
-- **Songs** — song/section status, a full backup and restore (songs, sections, settings, presets; every backup is also written to `Download/SLOOP` as a JSON file), and a phone-side library: import a `.sloopsong`, rename it, share it to another app, delete it.
+- **Songs** — song/section status, a full backup (also written to `Download/SLOOP` as a JSON file) and restore from the in-app list or a backup file, and a phone-side library: import a `.sloopsong`, rename it, share it to another app, delete it.
 - **Settings** — read the current theme from the FM-1, save it on the phone, write it back, and wear the same colours in the app; eight interface languages (English by default); about.
 
 The FM-1 is reached over USB MIDI through Android's own `android.media.midi`, not Web MIDI. No firmware is modified. Phones need USB host / OTG; the FM-1's USB port must be the one that exposes MIDI.

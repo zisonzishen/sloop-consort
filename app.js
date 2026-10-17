@@ -13,10 +13,10 @@
   let currentAt = 0;                  // when the machine's theme was read
   const T = (key, vars) => (window.ConsortI18n ? ConsortI18n.t(key, vars) : key);
   // USB descriptors are not guaranteed to be valid UTF-8; a broken name arrives as U+FFFD or mojibake.
-  // Only show a short printable-ASCII name, otherwise the localized "FM-1 connected" label.
-  function deviceLabel(name) {
+  // Only a short printable-ASCII name is shown, and only then does the toast name the port.
+  function cleanPortName(name) {
     const s = String(name || "").trim();
-    return /^[\x20-\x7E]{1,24}$/.test(s) ? s : T("conn.on");
+    return /^[\x20-\x7E]{1,24}$/.test(s) ? s : "";
   }
 
   function toastMsg(msg) {
@@ -104,8 +104,9 @@
     try {
       link = await Sloop.connect(transport);
       connRaw = label || "";
-      setConn(true, deviceLabel(connRaw));
-      toastMsg(T("conn.connectedTo", { name: deviceLabel(connRaw) }));
+      const port = cleanPortName(connRaw);
+      setConn(true, port || T("conn.on"));
+      toastMsg(port ? T("conn.connectedTo", { name: port }) : T("conn.on"));
       refreshSections();
       renderSongs();
       if (window.ConsortSamples) window.ConsortSamples.refresh();
@@ -117,6 +118,7 @@
     }
   }
 
+  setConn(false);                     // localized "not connected" before the first MIDI callback
   if (native) {
     window.__consortOpened = (ok, name, why) => {
       if (!ok) {
@@ -550,7 +552,6 @@
 
   function backupSheet() {
     const list = backups();
-    if (!list.length) { toastMsg(T("songs.noBackup")); return; }
     const back = document.createElement("div");
     back.className = "consort-back";
     const sheet = document.createElement("div");
@@ -564,10 +565,34 @@
     const cancel = document.createElement("button");
     cancel.textContent = T("menu.cancel");
     cancel.addEventListener("click", () => back.remove());
+    const fromFile = document.createElement("button");
+    fromFile.textContent = T("songs.restoreFile");
+    fromFile.addEventListener("click", () => { back.remove(); restoreFromFile(); });
+    sheet.appendChild(fromFile);
     sheet.appendChild(cancel);
     back.appendChild(sheet);
     back.addEventListener("click", (e) => { if (e.target === back) back.remove(); });
     document.body.appendChild(back);
+  }
+
+  function restoreFromFile() {
+    const inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = ".json,application/json";
+    inp.addEventListener("change", async () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return;
+      try {
+        const data = JSON.parse(await f.text());
+        if (!data || data.format !== "sloop-backup" || !Array.isArray(data.objects)) {
+          toastMsg(T("songs.restoreFileBad"));
+          return;
+        }
+        if (!confirm(T("songs.restoreConfirm", { name: f.name }))) return;
+        restoreBackup({ name: f.name, file: data });
+      } catch (e) { toastMsg(T("songs.restoreFileBad")); }
+    });
+    inp.click();
   }
 
   async function restoreBackup(b) {
@@ -602,7 +627,7 @@
   }
 
   document.addEventListener("consort:lang", () => {
-    setConn(!!link, deviceLabel(connRaw));
+    setConn(!!link, cleanPortName(connRaw) || T("conn.on"));
     paintPills();
     refreshSections();
     renderSongs();
