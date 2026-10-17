@@ -23,8 +23,16 @@
   }
 
   // ---- transport -----------------------------------------------------------------------------------
+  // The device can answer the very first INFO frame before Sloop.connect() has returned, so incoming
+  // bytes must go through transport.link: protocol.js sets that when the Link is made, while the
+  // module-level `link` below is still null until the handshake completes. Routing through `link`
+  // here would drop the INFO reply and make a perfectly good FM-1 look unresponsive.
   const nativeTransport = {
-    send(bytes) { ConsortMidi.send(Array.from(bytes).join(",")); }
+    send(bytes) { ConsortMidi.send(Array.from(bytes).join(",")); },
+    receive(csv) {
+      const l = this.link;
+      if (l && csv) l.receive(csv.split(",").map(Number));
+    }
   };
 
   function mockTransport() {
@@ -112,10 +120,13 @@
       }
       start(nativeTransport, name || "FM-1");
     };
-    window.__consortIn = (csv) => {
-      if (link && csv) link.receive(csv.split(",").map(Number));
+    window.__consortIn = (csv) => { nativeTransport.receive(csv); };
+    window.__consortLost = () => {
+      nativeTransport.link = null;
+      link = null;
+      connLabel = null;
+      setConn(false);
     };
-    window.__consortLost = () => { link = null; connLabel = null; setConn(false); };
     try { ConsortMidi.connect(); } catch (e) { /* no bridge */ }
   } else {
     setTimeout(() => start(mockTransport(), "FM-1 (mock)"), 250);
