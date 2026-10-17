@@ -17,12 +17,12 @@ body{background:var(--bg);color:var(--fg2);font:16px/20px var(--font);-webkit-fo
 
 header{display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--line);flex:none;min-height:58px}
 .brand{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none}
-.brand .mark{width:52px;height:44px;display:block;flex:none}
+.brand .mark{width:52px;height:44px;display:block;flex:none;color:var(--fg)}
 .lockup{display:flex;flex-direction:column;line-height:1}
 .lockup .word{font-size:20px;line-height:22px;color:var(--fg);letter-spacing:.02em}
 .lockup small{color:var(--dim);font-size:10px;line-height:13px;margin-top:4px;letter-spacing:.04em}
 .conn{margin-left:auto;display:flex;align-items:center;gap:7px;background:var(--s2);color:var(--fg2);
-      border:0;border-radius:0;padding:6px 10px;font:inherit;font-size:12px;min-height:32px;text-transform:none}
+      border:0;border-radius:0;padding:8px 12px;font:inherit;font-size:12px;min-height:38px;text-transform:none}
 .conn i{width:7px;height:7px;background:var(--t2);box-shadow:0 0 6px var(--t2)}
 .conn.off i{background:var(--s3);box-shadow:none}
 
@@ -44,12 +44,12 @@ button:active{background:var(--s3)}
 button.pri{background:var(--acc);color:var(--ink)}
 button.ghost{background:transparent}
 button.wide{width:100%}
-.mini{min-height:34px;padding:4px 8px;font-size:12px}
+.mini{min-height:38px;padding:4px 8px;font-size:12px}
 
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
 .chip{background:var(--card2);border:1px solid var(--line);border-radius:0;padding:7px 8px;text-align:left;min-height:54px}
-.chip b{display:block;font-size:15px;line-height:18px;color:var(--fg);font-weight:400}
-.chip span{display:block;color:var(--dim);font-size:10px;line-height:13px;margin-top:3px}
+.chip b{display:block;font-size:15px;line-height:18px;color:var(--fg);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip span{display:block;color:var(--dim);font-size:10px;line-height:13px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip.on{border-color:var(--acc)}
 .chip.on b{color:var(--acc)}
 
@@ -70,10 +70,12 @@ button.wide{width:100%}
 .meter i{display:block;height:100%;width:0;background:var(--t2)}
 .acts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
 .acts button{min-height:44px;font-size:13px}
+.acts button.on{background:var(--acc);color:var(--ink)}
 
 .take{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
 .take:first-of-type{border-top:0}
-.take b{font-weight:400;font-size:14px;color:var(--fg)}
+.take>div{min-width:0}
+.take b{display:block;font-weight:400;font-size:14px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .take span{display:block;color:var(--dim);font-size:10px;margin-top:2px}
 .take .mini{margin-left:auto}
 
@@ -91,12 +93,15 @@ button.wide{width:100%}
 
 .song{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
 .song:first-of-type{border-top:0}
-.song b{font-size:14px;font-weight:400;color:var(--fg)}
+.song>div{min-width:0}
+.song b{display:block;font-size:14px;font-weight:400;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .song span{display:block;color:var(--dim);font-size:10px;margin-top:2px}
 .song .mini{margin-left:auto}
 
 .themerow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
 .themerow:first-of-type{border-top:0}
+.themerow>div{min-width:0}
+.themerow b{display:block;font-weight:400;font-size:14px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .swatches{display:flex;gap:4px;margin-top:8px}
 .sw{width:24px;height:24px;border:1px solid var(--s3);flex:none}
 .themerow .swatches{margin:0;flex:none}

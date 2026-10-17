@@ -18,6 +18,8 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.regex.Pattern;
 
@@ -168,8 +170,9 @@ public final class MidiBridge {
     }
 
     private void jsOpened(boolean ok, String why) {
-        js("window.__consortOpened&&window.__consortOpened(" + ok + ",'" + portName.replace("'", "")
-                + "','" + why.replace("'", "") + "')");
+        // quote() keeps a device descriptor with quotes, backslashes or control characters from breaking the script
+        js("window.__consortOpened&&window.__consortOpened(" + ok + "," + JSONObject.quote(portName)
+                + "," + JSONObject.quote(why) + ")");
     }
 
     private void js(String code) {

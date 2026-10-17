@@ -85,33 +85,43 @@ public final class FilesBridge {
     }
 
     @JavascriptInterface
-    public void rename(String name, String to) {
+    public boolean rename(String name, String to) {
         String clean = to == null ? "" : to.trim().replaceAll("[\\\\/:*?\"<>|\\r\\n\\t]", "_");
-        if (clean.isEmpty()) return;
+        if (clean.isEmpty()) return false;
         String oldExt = ext(name);
         if (!oldExt.isEmpty() && !clean.toLowerCase(Locale.ROOT).endsWith("." + oldExt)) clean += "." + oldExt;
+        if (clean.equals(name)) return true;
         if (Build.VERSION.SDK_INT >= 29) {
             Uri uri = uriFor(name);
-            if (uri == null) return;
+            if (uri == null || mediaNameExists(clean)) return false;   // never overwrite another file
             ContentValues v = new ContentValues();
             v.put(MediaStore.MediaColumns.DISPLAY_NAME, clean);
-            activity.getContentResolver().update(uri, v, null, null);
-        } else {
-            File dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-            File from = new File(dir, name), dest = new File(dir, clean);
-            if (from.isFile() && !dest.exists()) from.renameTo(dest);
+            return activity.getContentResolver().update(uri, v, null, null) > 0;
         }
+        File dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+        File from = new File(dir, name), dest = new File(dir, clean);
+        return from.isFile() && !dest.exists() && from.renameTo(dest);
     }
 
     @JavascriptInterface
-    public void delete(String name) {
+    public boolean delete(String name) {
         if (Build.VERSION.SDK_INT >= 29) {
             Uri uri = uriFor(name);
-            if (uri != null) activity.getContentResolver().delete(uri, null, null);
-        } else {
-            File dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-            File f = new File(dir, name);
-            if (f.isFile()) f.delete();
+            return uri != null && activity.getContentResolver().delete(uri, null, null) > 0;
+        }
+        File dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+        File f = new File(dir, name);
+        return f.isFile() && f.delete();
+    }
+
+    private boolean mediaNameExists(String name) {
+        try (Cursor c = activity.getContentResolver().query(MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                new String[]{MediaStore.MediaColumns._ID},
+                MediaStore.MediaColumns.DISPLAY_NAME + "=? AND " + MediaStore.MediaColumns.RELATIVE_PATH + " LIKE ?",
+                new String[]{name, DIR + "/%"}, null)) {
+            return c != null && c.moveToFirst();
+        } catch (Exception e) {
+            return false;
         }
     }
 

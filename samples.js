@@ -193,20 +193,39 @@
       .then((info) => { lastInfo = info; lastErr = null; paintSlots(); })
       .catch((e) => { lastInfo = null; lastErr = e.message || String(e); paintSlots(); });
   }
+  let preview = null;
+  function stopPreview() {
+    if (!preview) return;
+    const s = preview;
+    preview = null;
+    const btn = document.getElementById("smp-play");
+    if (btn) btn.classList.remove("on");
+    try { s.stop(); } catch (e) { /* already ended */ }
+  }
   function play() {
     if (!take) { toast(T("smp.needTake")); return; }
+    if (preview) { stopPreview(); return; }
     const i0 = Math.floor(trim.a * take.pcm.length), i1 = Math.max(i0 + 1, Math.floor(trim.b * take.pcm.length));
     const ac = new (window.AudioContext || window.webkitAudioContext)();
     const buf = ac.createBuffer(1, i1 - i0, take.rate);
     buf.copyToChannel(take.pcm.subarray(i0, i1), 0);
     const src = ac.createBufferSource();
     src.buffer = buf;
+    src.loop = !!loopMode;                    // in LOOP the audition loops until pressed again
     src.connect(ac.destination);
+    const btn = document.getElementById("smp-play");
+    if (btn) btn.classList.add("on");
+    src.onended = () => {
+      ac.close().catch(() => {});
+      if (preview === src) preview = null;
+      if (btn) btn.classList.remove("on");
+    };
     src.start();
-    src.onended = () => ac.close();
+    preview = src;
   }
   function autoTrim() {
     if (!take) return;
+    stopPreview();
     const x = take.pcm, peak = x.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
     const th = Math.max(0.01, peak * 0.04);
     let i0 = 0, i1 = x.length - 1;
@@ -217,6 +236,7 @@
   }
   function normalize() {
     if (!take) return;
+    stopPreview();
     const peak = take.pcm.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
     if (peak < 1e-4) { toast(T("smp.silent")); return; }
     const g = 0.98 / peak;
@@ -226,6 +246,7 @@
   }
   function fade() {
     if (!take) return;
+    stopPreview();
     const n = Math.min(Math.round(take.rate * 0.015), take.pcm.length >> 2);
     for (let i = 0; i < n; i++) {
       const g = i / n;
@@ -307,13 +328,20 @@
       back.remove();
       const to = prompt(T("menu.newName"), t.name);
       if (!to) return;
+      const m = /(\.[^.]+)$/.exec(t.name);
+      const ext = m ? m[1] : "";
+      let next = to.trim();
+      if (ext && !next.toLowerCase().endsWith(ext.toLowerCase())) next += ext;
+      if (!next) return;
+      let ok = true;
+      if (window.ConsortFiles) { try { ok = ConsortFiles.rename(t.name, next); } catch (e) { ok = false; } }
+      if (!ok) { toast(T("file.renameFail", { name: t.name })); return; }
       const list = takes();
       if (list[i]) {
-        list[i].name = to.trim() || t.name;
+        list[i].name = next;
         localStorage.setItem("consort.takes", JSON.stringify(list));
         renderTakes();
       }
-      if (window.ConsortFiles) { try { ConsortFiles.rename(t.name, to); } catch (e) { /* gone */ } }
     });
     const share = document.createElement("button");
     share.textContent = T("menu.share");
@@ -328,10 +356,12 @@
     del.addEventListener("click", () => {
       back.remove();
       if (!confirm(T("deleteConfirm", { name: t.name }))) return;
+      let ok = true;
+      if (window.ConsortFiles) { try { ok = ConsortFiles.delete(t.name); } catch (e) { ok = false; } }
+      if (!ok) { toast(T("file.deleteFail", { name: t.name })); return; }
       const list = takes();
       list.splice(i, 1);
       localStorage.setItem("consort.takes", JSON.stringify(list));
-      if (window.ConsortFiles) { try { ConsortFiles.delete(t.name); } catch (e) { /* gone */ } }
       renderTakes();
       toast(T("deleted", { name: t.name }));
     });
@@ -347,6 +377,7 @@
     const btn = document.getElementById("smp-rec");
     if (recorder && recorder.state === "recording") { recorder.stop(); return; }
     if (!navigator.mediaDevices || !window.MediaRecorder) { toast(T("smp.noRec")); return; }
+    stopPreview();                            // never record the audition coming out of the speaker
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
       const chunks = [];
@@ -373,7 +404,7 @@
           ac.close().catch(() => {});
           const pcm = monoPcm(buf);
           const d = new Date(), p = (x) => (x < 10 ? "0" : "") + x;
-          take = { pcm, rate: buf.sampleRate, name: "REC-" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes()) + ".wav" };
+          take = { pcm, rate: buf.sampleRate, name: "REC-" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()) + ".wav" };
           document.getElementById("smp-name").value = "REC-" + p(d.getHours()) + p(d.getMinutes());
           drawWave(pcm);
           setTrim(0, 1);
@@ -416,7 +447,7 @@
   document.getElementById("smp-upload").addEventListener("click", upload);
   document.getElementById("root-dec").addEventListener("click", () => { root = Math.max(24, root - 1); rootLabel(); });
   document.getElementById("root-inc").addEventListener("click", () => { root = Math.min(96, root + 1); rootLabel(); });
-  document.getElementById("smp-loopmode").addEventListener("click", () => { loopMode = loopMode ? 0 : 1; loopLabel(); setTrim(trim.a, trim.b); });
+  document.getElementById("smp-loopmode").addEventListener("click", () => { stopPreview(); loopMode = loopMode ? 0 : 1; loopLabel(); setTrim(trim.a, trim.b); });
   document.getElementById("smp-name").addEventListener("input", (e) => {
     e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9 _-]/g, "").slice(0, 8);
   });
@@ -450,6 +481,7 @@
     refresh,
     relabel,
     _take: (pcm, rate, name) => {
+      stopPreview();
       take = { pcm, rate, name: name || "TEST.wav" };
       drawWave(pcm); setTrim(0, 1); autoTrim();
     }

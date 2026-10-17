@@ -9,9 +9,15 @@
   let link = null;
   let current = null;                 // the theme last read from the machine
   let autoTheme = null;               // the mock device's skin
-  let connLabel = null;               // the device name shown in the header
+  let connRaw = null;                 // the USB MIDI port name, if it is printable ASCII
   let currentAt = 0;                  // when the machine's theme was read
   const T = (key, vars) => (window.ConsortI18n ? ConsortI18n.t(key, vars) : key);
+  // USB descriptors are not guaranteed to be valid UTF-8; a broken name arrives as U+FFFD or mojibake.
+  // Only show a short printable-ASCII name, otherwise the localized "FM-1 connected" label.
+  function deviceLabel(name) {
+    const s = String(name || "").trim();
+    return /^[\x20-\x7E]{1,24}$/.test(s) ? s : T("conn.on");
+  }
 
   function toastMsg(msg) {
     const el = document.getElementById("toast");
@@ -97,15 +103,15 @@
   async function start(transport, label) {
     try {
       link = await Sloop.connect(transport);
-      connLabel = label || "FM-1";
-      setConn(true, connLabel);
-      toastMsg(T("conn.connectedTo", { name: connLabel }));
+      connRaw = label || "";
+      setConn(true, deviceLabel(connRaw));
+      toastMsg(T("conn.connectedTo", { name: deviceLabel(connRaw) }));
       refreshSections();
       renderSongs();
       if (window.ConsortSamples) window.ConsortSamples.refresh();
     } catch (e) {
       link = null;
-      connLabel = null;
+      connRaw = null;
       setConn(false);
       toastMsg(T("conn.noReply"));
     }
@@ -124,7 +130,7 @@
     window.__consortLost = () => {
       nativeTransport.link = null;
       link = null;
-      connLabel = null;
+      connRaw = null;
       setConn(false);
     };
     try { ConsortMidi.connect(); } catch (e) { /* no bridge */ }
@@ -465,7 +471,9 @@
       back.remove();
       const to = prompt(T("menu.newName"), f.name);
       if (!to) return;
-      if (window.ConsortFiles) ConsortFiles.rename(f.name, to);
+      let ok = true;
+      if (window.ConsortFiles) { try { ok = ConsortFiles.rename(f.name, to); } catch (e) { ok = false; } }
+      if (!ok) { toastMsg(T("file.renameFail", { name: f.name })); return; }
       renderSongs();
     });
     const del = document.createElement("button");
@@ -474,8 +482,11 @@
     del.addEventListener("click", () => {
       back.remove();
       if (!confirm(T("deleteConfirm", { name: f.name }))) return;
-      if (window.ConsortFiles) ConsortFiles.delete(f.name);
+      let ok = true;
+      if (window.ConsortFiles) { try { ok = ConsortFiles.delete(f.name); } catch (e) { ok = false; } }
+      if (!ok) { toastMsg(T("file.deleteFail", { name: f.name })); return; }
       renderSongs();
+      toastMsg(T("deleted", { name: f.name }));
     });
     const cancel = document.createElement("button");
     cancel.textContent = T("menu.cancel");
@@ -506,30 +517,76 @@
   }
   async function backupSave() {
     if (!link) { toastMsg(T("needConnect")); return; }
+    const btn = document.getElementById("bk-save");
+    if (btn) { btn.disabled = true; btn.textContent = T("songs.backingUp"); }
     try {
       toastMsg(T("songs.backingUp"));
-      const file = await Sloop.backupCapture(link);
+      const file = await Sloop.backupCapture(link, (done, total) => {
+        if (btn && total) btn.textContent = Math.round(done / total * 100) + "%";
+      });
+      // A durable copy first: Download/SLOOP survives a cleared WebView, the list below is the convenience copy.
+      const d = new Date(), p = (n) => (n < 10 ? "0" : "") + n;
+      const stamp = d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+      const fileName = "SLOOP-backup-" + stamp + ".json";
+      let fileSaved = true;
+      try {
+        const r = await fetch("/save?name=" + encodeURIComponent(fileName) + "&type=application/json",
+          { method: "POST", body: JSON.stringify(file) });
+        fileSaved = r.ok;
+      } catch (e) { fileSaved = !window.ConsortFiles; }   // the static preview has no saver
       const list = backups();
       const name = T("songs.backupName", { when: when(Date.now()) });
       list.unshift({ name, date: Date.now(), file });
-      try { localStorage.setItem("consort.backups", JSON.stringify(list.slice(0, 5))); } catch (e) { toastMsg(T("storage.fail")); return; }
-      toastMsg(T("songs.backupDone", { n: file.objects.length }));
+      try {
+        localStorage.setItem("consort.backups", JSON.stringify(list.slice(0, 5)));
+        toastMsg(T("songs.backupDone", { n: file.objects.length })
+          + (fileSaved && window.ConsortFiles ? " · Download/SLOOP" : ""));
+      } catch (e) {
+        toastMsg(fileSaved ? T("songs.backupFileOnly", { n: file.objects.length }) : T("storage.fail"));
+      }
     } catch (e) { toastMsg(T("songs.backupFail", { err: e.message })); }
+    if (btn) { btn.disabled = false; btn.textContent = T("songs.backup"); }
   }
-  async function backupRestoreLatest() {
-    if (!link) { toastMsg(T("needConnect")); return; }
+
+  function backupSheet() {
     const list = backups();
     if (!list.length) { toastMsg(T("songs.noBackup")); return; }
-    if (!confirm(T("songs.restoreConfirm", { name: list[0].name }))) return;
+    const back = document.createElement("div");
+    back.className = "consort-back";
+    const sheet = document.createElement("div");
+    sheet.className = "consort-sheet";
+    list.forEach((b) => {
+      const btn = document.createElement("button");
+      btn.textContent = b.name;
+      btn.addEventListener("click", () => { back.remove(); restoreBackup(b); });
+      sheet.appendChild(btn);
+    });
+    const cancel = document.createElement("button");
+    cancel.textContent = T("menu.cancel");
+    cancel.addEventListener("click", () => back.remove());
+    sheet.appendChild(cancel);
+    back.appendChild(sheet);
+    back.addEventListener("click", (e) => { if (e.target === back) back.remove(); });
+    document.body.appendChild(back);
+  }
+
+  async function restoreBackup(b) {
+    if (!link) { toastMsg(T("needConnect")); return; }
+    if (!confirm(T("songs.restoreConfirm", { name: b.name }))) return;
+    const btn = document.getElementById("bk-restore");
+    if (btn) { btn.disabled = true; btn.textContent = T("songs.restoring"); }
     try {
       toastMsg(T("songs.restoring"));
-      await Sloop.backupRestore(link, list[0].file);
-      toastMsg(T("songs.restored", { name: list[0].name }));
+      await Sloop.backupRestore(link, b.file, (done, total) => {
+        if (btn && total) btn.textContent = Math.round(done / total * 100) + "%";
+      });
+      toastMsg(T("songs.restored", { name: b.name }));
       refreshSections();
     } catch (e) { toastMsg(T("songs.restoreFail", { err: e.message })); }
+    if (btn) { btn.disabled = false; btn.textContent = T("songs.restore"); }
   }
   document.getElementById("bk-save").addEventListener("click", backupSave);
-  document.getElementById("bk-restore").addEventListener("click", backupRestoreLatest);
+  document.getElementById("bk-restore").addEventListener("click", backupSheet);
   document.getElementById("song-import").addEventListener("click", importSong);
   const songsTab = document.querySelector('nav button[data-page="p-songs"]');
   if (songsTab) songsTab.addEventListener("click", () => { refreshSections(); renderSongs(); });
@@ -545,7 +602,7 @@
   }
 
   document.addEventListener("consort:lang", () => {
-    setConn(!!link, connLabel);
+    setConn(!!link, deviceLabel(connRaw));
     paintPills();
     refreshSections();
     renderSongs();

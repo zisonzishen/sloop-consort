@@ -11,6 +11,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
@@ -190,12 +191,14 @@ final class LocalServer implements Runnable {
     /** Writes the file where a person can find it and returns that path. */
     private String store(File tmp, String name, String type) throws IOException {
         if (Build.VERSION.SDK_INT >= 29) {
+            ContentResolver cr = ctx.getContentResolver();
+            // never let a second save shadow the first: Download/SLOOP keeps both, with " (n)" on the newer one
+            String unique = uniqueMediaName(cr, name);
             ContentValues v = new ContentValues();
-            v.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+            v.put(MediaStore.MediaColumns.DISPLAY_NAME, unique);
             v.put(MediaStore.MediaColumns.MIME_TYPE, type);
             v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/SLOOP");
             v.put(MediaStore.MediaColumns.IS_PENDING, 1);
-            ContentResolver cr = ctx.getContentResolver();
             Uri uri = cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
             if (uri == null) throw new IOException("MediaStore refused the file");
             try (OutputStream o = cr.openOutputStream(uri)) {
@@ -210,7 +213,7 @@ final class LocalServer implements Runnable {
             ContentValues done = new ContentValues();
             done.put(MediaStore.MediaColumns.IS_PENDING, 0);
             cr.update(uri, done, null, null);
-            return Environment.DIRECTORY_DOWNLOADS + "/SLOOP/" + name;
+            return Environment.DIRECTORY_DOWNLOADS + "/SLOOP/" + unique;
         }
         File dir = ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
         if (dir == null) dir = ctx.getFilesDir();
@@ -222,6 +225,29 @@ final class LocalServer implements Runnable {
         }
         MediaScannerConnection.scanFile(ctx, new String[]{out.getAbsolutePath()}, null, null);
         return out.getAbsolutePath();
+    }
+
+    private static String uniqueMediaName(ContentResolver cr, String name) {
+        int dot = name.lastIndexOf('.');
+        String base = dot > 0 ? name.substring(0, dot) : name;
+        String ext = dot > 0 ? name.substring(dot) : "";
+        String candidate = name;
+        for (int i = 1; i < 1000; i++) {
+            if (!mediaNameExists(cr, candidate)) return candidate;
+            candidate = base + " (" + i + ")" + ext;
+        }
+        return base + " (" + System.currentTimeMillis() + ")" + ext;
+    }
+
+    private static boolean mediaNameExists(ContentResolver cr, String name) {
+        try (Cursor c = cr.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                new String[]{MediaStore.MediaColumns._ID},
+                MediaStore.MediaColumns.DISPLAY_NAME + "=? AND " + MediaStore.MediaColumns.RELATIVE_PATH + " LIKE ?",
+                new String[]{name, Environment.DIRECTORY_DOWNLOADS + "/SLOOP/%"}, null)) {
+            return c != null && c.moveToFirst();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private static File unique(File dir, String name) {
