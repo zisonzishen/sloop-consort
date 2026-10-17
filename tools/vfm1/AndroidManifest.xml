@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A virtual USB-MIDI-shaped FM-1 for testing Consort without hardware. The service advertises one
+     MIDI device named "Felucca"; it forwards SysEx frames to a host build of the SLOOP firmware over
+     TCP (10.0.2.2 from the Android emulator) and sends the replies back. Not part of the app. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.consort.vfm1">
+    <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="36" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application android:label="Consort VFM1">
+        <service
+            android:name=".VirtualFm1Service"
+            android:exported="true"
+            android:permission="android.permission.BIND_MIDI_DEVICE_SERVICE">
+            <intent-filter>
+                <action android:name="android.media.midi.MidiDeviceService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.media.midi.MidiDeviceService"
+                android:resource="@xml/midi_device" />
+        </service>
+    </application>
+</manifest>

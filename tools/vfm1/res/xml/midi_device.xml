@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<devices>
+    <device name="Felucca">
+        <input-port name="Felucca IN" />
+        <output-port name="Felucca OUT" />
+    </device>
+</devices>

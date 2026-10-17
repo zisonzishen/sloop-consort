@@ -3,6 +3,8 @@ android/build/
 android/consort.apk
 android/consort.apk.idsig
 consort.apk
+tools/vfm1/build/
+tools/vfm1/vfm1.apk
 
 # test artifacts
 .playwright-mcp/

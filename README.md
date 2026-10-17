@@ -58,9 +58,21 @@ samples.js   the sampler
 android/     WebView shell, local server, USB MIDI bridge, file bridge
 ```
 
+## Testing with the virtual FM-1
+
+The APK can be run against the **real SLOOP firmware** with no machine, through a small virtual-MIDI
+rig in `tools/vfm1/`: an Android `MidiDeviceService` publishes a device named `Felucca`, and a host
+build of the firmware (the browser emulator's environment plus `editor.c`) answers the same SysEx.
+This is how the sampler, FX, theme, backup and restore paths are verified end-to-end. See
+[tools/vfm1/README.md](tools/vfm1/README.md).
+
 ## Status
 
-The APK builds; the USB MIDI handshake and section status work on a real FM-1 (see the screenshots). The protocol layer — INFO, sample upload with the app's IMA encoder and stored-object CRC, theme write/read, backup capture and restore, LIVE FX and global SET — passes against the SLOOP virtual firmware in a host build. The Android-side writes are being exercised on hardware. Bug reports are welcome.
+Verified through the APK against the virtual FM-1: INFO, sample encode/upload to USR and erase, FX
+press/release, global SET, theme read/save/write-back and skin, and backup to `Download/SLOOP` with
+restore. On real hardware, the USB MIDI handshake and section status are confirmed on an FM-1; a
+final pass on the machine is still worthwhile for the sampler/FX/theme/backup writes. Bug reports are
+welcome.
 
 ## Credits and licences
 

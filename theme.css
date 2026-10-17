@@ -49,7 +49,7 @@ button.wide{width:100%}
 .mini{min-height:38px;padding:4px 8px;font-size:12px}
 
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
-.chip{background:var(--card2);border:1px solid var(--line);border-radius:0;padding:7px 8px;text-align:left;min-height:54px}
+.chip{background:var(--card2);border:1px solid var(--line);border-radius:0;padding:7px 8px;text-align:left;min-height:54px;min-width:0}
 .chip b{display:block;font-size:15px;line-height:18px;color:var(--fg);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip span{display:block;color:var(--dim);font-size:10px;line-height:13px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip.on{border-color:var(--acc)}
@@ -157,4 +157,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:6px;height
 @media (min-width:720px){
   header,main{max-width:680px;margin-left:auto;margin-right:auto;width:100%}
   nav{left:50%;right:auto;transform:translateX(-50%);width:680px}
+}
+
+/* 320–360 dp phones: four chips and four edit keys in one row stop being legible or even fitting. */
+@media (max-width:360px){
+  .chips{grid-template-columns:repeat(2,1fr)}
+  .acts{grid-template-columns:repeat(2,1fr)}
+  .fxgrid .fx{font-size:8px;line-height:9px}
 }
